@@ -39,6 +39,7 @@ func (h *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	// 2. Парсинг JSON из тела запроса
 	var request RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
+	defer r.Body.Close()
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid JSON")
 		return

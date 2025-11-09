@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"microblog/internal/service"
 	"net/http"
 	"strings"
+
+	"microblog/internal/service"
 )
 
 // структура для создания поста

@@ -2,15 +2,18 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	m "microblog/internal/models"
 	"sync"
 )
 
+// Структура для хранения постов в памяти
 type PostStorage struct {
 	Posts map[string]m.Post
 	mu    sync.RWMutex
 }
 
+// функция которая правильно создаёт и инициализирует структуру
 func NewPostStorage() *PostStorage {
 	return &PostStorage{
 		Posts: make(map[string]m.Post),
@@ -21,7 +24,7 @@ func (ps *PostStorage) AddPost(post m.Post) error {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
-	if _, ok := ps.Posts[post.ID]; ok {
+	if _, exists := ps.Posts[post.ID]; exists {
 		return errors.New("already exists")
 	}
 
@@ -29,23 +32,28 @@ func (ps *PostStorage) AddPost(post m.Post) error {
 	return nil
 }
 
-func (ps *PostStorage) GetPostById(id string) (m.Post, error) {
+func (ps *PostStorage) GetPostById(id string) (*m.Post, error) {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
 	post, ok := ps.Posts[id]
 	if !ok {
-		return m.Post{}, errors.New("not found")
+		return nil, fmt.Errorf("post with id %s not found", id)
 	}
 
-	return post, nil
+	return &post, nil
 }
 
 func (ps *PostStorage) GetAllPosts() []m.Post {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
-	posts := make([]m.Post, 0)
+	if len(ps.Posts) == 0 {
+		return []m.Post{}
+	}
+
+	posts := make([]m.Post, 0, len(ps.Posts))
+
 	for _, post := range ps.Posts {
 		posts = append(posts, post)
 	}
@@ -57,8 +65,8 @@ func (ps *PostStorage) UpdatePost(post m.Post) error {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
-	if _, ok := ps.Posts[post.ID]; !ok {
-		return errors.New("post not found")
+	if _, exists := ps.Posts[post.ID]; !exists {
+		return fmt.Errorf("post with id %s not found", post.ID)
 	}
 
 	ps.Posts[post.ID] = post

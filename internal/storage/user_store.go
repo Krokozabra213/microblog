@@ -3,28 +3,31 @@ package storage
 import (
 	"errors"
 	m "microblog/internal/models"
+	"strings"
 	"sync"
 )
 
-type UserStorage struct {
-	User map[string]m.User
-	mu   sync.RWMutex
+// Структура для хранения пользователей в памяти
+type UserSstorage struct {
+	User       map[string]m.User
+	UserByName map[string]string
+	mu         sync.RWMutex
 }
 
-func NewUserStorage() *UserStorage {
-	return &UserStorage{
-		User: make(map[string]m.User),
+// функция которая правильно создаёт и инициализирует структуру
+func NewUserStorage() *UserSstorage {
+	return &UserSstorage{
+		User:       make(map[string]m.User),
+		UserByName: make(map[string]string),
 	}
 }
 
 // добавляем нового пользователя по айди
-func (s *UserStorage) Create(user m.User) error {
-	//блокаем мапу для записи и в конце разблокаем
+func (s *UserSstorage) Create(user m.User) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Проверка есть или нет
-	if _, exits := s.User[user.ID]; exits {
+	if _, exists := s.User[user.ID]; exists {
 		return errors.New("already exists")
 	}
 
@@ -33,13 +36,15 @@ func (s *UserStorage) Create(user m.User) error {
 	return nil
 }
 
-// получение всех пользователей
-func (s *UserStorage) GetAll() []m.User {
+func (s *UserSstorage) GetAll() []m.User {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	all := make([]m.User, 0)
+	if len(s.User) == 0 {
+		return []m.User{}
+	}
 
+	all := make([]m.User, 0)
 	for _, user := range s.User {
 		all = append(all, user)
 	}
@@ -47,7 +52,7 @@ func (s *UserStorage) GetAll() []m.User {
 	return all
 }
 
-func (s *UserStorage) GetUserByID(id string) (m.User, error) {
+func (s *UserSstorage) GetUserByID(id string) (m.User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -60,15 +65,12 @@ func (s *UserStorage) GetUserByID(id string) (m.User, error) {
 }
 
 // получение пользователя по юзеру
-func (s *UserStorage) ExistsByUsername(username string) bool {
+func (s *UserSstorage) ExistsByUsername(username string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for _, user := range s.User {
-		if user.Username == username {
-			return true
-		}
-	}
+	_, exists := s.UserByName[strings.ToLower(username)]
+	return exists
 
 	return false
 }

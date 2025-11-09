@@ -11,32 +11,32 @@ import (
 )
 
 type UserService struct {
-	store *storage.UserStorage
+	store *storage.UserSstorage
 }
 
-func NewUserService(store *storage.UserStorage) *UserService {
+func NewUserService(store *storage.UserSstorage) *UserService {
 	return &UserService{
 		store: store,
 	}
 }
 
-func (s *UserService) GenerateUserId() string {
+func (s *UserService) GenerateUserID() string {
 	return uuid.NewString()
 }
 
-func (s *UserService) RegisterUser(username string) (m.User, error) {
+func (s *UserService) RegisterUser(username string) (*m.User, error) {
 	// 1. Валидация username
 	if username == "" {
-		return m.User{}, errors.New("username is empty")
+		return nil, errors.New("username is empty")
 	}
 
 	// 2. Проверка уникальности (опционально)
 	if s.store.ExistsByUsername(strings.ToLower(username)) {
-		return m.User{}, errors.New("username already exists")
+		return &m.User{}, errors.New("username already exists")
 	}
 
 	// 3. Генерация ID
-	id := s.GenerateUserId()
+	id := s.GenerateUserID()
 
 	// 4. Установка времени
 	createdAt := time.Now()
@@ -51,9 +51,9 @@ func (s *UserService) RegisterUser(username string) (m.User, error) {
 	// 6. Вызов store.Create(user)
 	err := s.store.Create(user)
 	if err != nil {
-		return m.User{}, err
+		return nil, err
 	}
 
 	// 7. Возврат результата
-	return user, nil
+	return &user, nil
 }
