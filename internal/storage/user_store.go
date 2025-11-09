@@ -2,33 +2,37 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	m "microblog/internal/models"
 	"strings"
 	"sync"
 )
 
+var ErrAlreadyExists = errors.New("already exists")
+var ErrUserNotFound = errors.New("user not found")
+
 // Структура для хранения пользователей в памяти
-type UserSstorage struct {
+type UsersStorage struct {
 	User       map[string]m.User
 	UserByName map[string]string
 	mu         sync.RWMutex
 }
 
 // функция которая правильно создаёт и инициализирует структуру
-func NewUserStorage() *UserSstorage {
-	return &UserSstorage{
+func NewUserStorage() *UsersStorage {
+	return &UsersStorage{
 		User:       make(map[string]m.User),
 		UserByName: make(map[string]string),
 	}
 }
 
 // добавляем нового пользователя по айди
-func (s *UserSstorage) Create(user m.User) error {
+func (s *UsersStorage) Create(user m.User) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, exists := s.User[user.ID]; exists {
-		return errors.New("already exists")
+		return errors.New(ErrAlreadyExists.Error())
 	}
 
 	s.User[user.ID] = user
@@ -36,7 +40,7 @@ func (s *UserSstorage) Create(user m.User) error {
 	return nil
 }
 
-func (s *UserSstorage) GetAll() []m.User {
+func (s *UsersStorage) GetAll() []m.User {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -52,20 +56,21 @@ func (s *UserSstorage) GetAll() []m.User {
 	return all
 }
 
-func (s *UserSstorage) GetUserByID(id string) (m.User, error) {
+func (s *UsersStorage) GetUserByID(id string) (m.User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	user, exists := s.User[id]
 	if !exists {
-		return m.User{}, errors.New("user not found")
+		return m.User{}, fmt.Errorf("%w: id=%q", ErrUserNotFound, id)
+
 	}
 
 	return user, nil
 }
 
 // получение пользователя по юзеру
-func (s *UserSstorage) ExistsByUsername(username string) bool {
+func (s *UsersStorage) ExistsByUsername(username string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

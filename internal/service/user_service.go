@@ -11,10 +11,10 @@ import (
 )
 
 type UserService struct {
-	store *storage.UserSstorage
+	store *storage.UsersStorage
 }
 
-func NewUserService(store *storage.UserSstorage) *UserService {
+func NewUserService(store *storage.UsersStorage) *UserService {
 	return &UserService{
 		store: store,
 	}
@@ -24,6 +24,13 @@ func (s *UserService) GenerateUserID() string {
 	return uuid.NewString()
 }
 
+// Эта функция для регестрации юзера она:
+// - Валидирует username
+// - Проверяет уникальность юзера
+// - Генерирует ID
+// - Устанавливает время
+// - Создает юзера
+// - И сохраняет все в память
 func (s *UserService) RegisterUser(username string) (*m.User, error) {
 	// 1. Валидация username
 	if username == "" {

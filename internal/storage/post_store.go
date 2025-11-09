@@ -7,6 +7,9 @@ import (
 	"sync"
 )
 
+var ErrPostNotFound = errors.New("post not found")
+var ErrFailedToCreatePost = errors.New("failed to create post")
+
 // Структура для хранения постов в памяти
 type PostStorage struct {
 	Posts map[string]m.Post
@@ -25,7 +28,7 @@ func (ps *PostStorage) AddPost(post m.Post) error {
 	defer ps.mu.Unlock()
 
 	if _, exists := ps.Posts[post.ID]; exists {
-		return errors.New("already exists")
+		return errors.New(ErrAlreadyExists.Error())
 	}
 
 	ps.Posts[post.ID] = post
@@ -38,7 +41,7 @@ func (ps *PostStorage) GetPostById(id string) (*m.Post, error) {
 
 	post, ok := ps.Posts[id]
 	if !ok {
-		return nil, fmt.Errorf("post with id %s not found", id)
+		return nil, fmt.Errorf("%w: id=%q", ErrPostNotFound.Error(), id)
 	}
 
 	return &post, nil
@@ -66,7 +69,7 @@ func (ps *PostStorage) UpdatePost(post m.Post) error {
 	defer ps.mu.Unlock()
 
 	if _, exists := ps.Posts[post.ID]; !exists {
-		return fmt.Errorf("post with id %s not found", post.ID)
+		return fmt.Errorf("%w: id=%q", ErrPostNotFound.Error(), post.ID)
 	}
 
 	ps.Posts[post.ID] = post

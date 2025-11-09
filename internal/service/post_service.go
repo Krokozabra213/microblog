@@ -3,19 +3,20 @@ package service
 import (
 	"errors"
 	"fmt"
-	m "microblog/internal/models"
-	"microblog/internal/storage"
 	"time"
 
 	"github.com/google/uuid"
+
+	m "microblog/internal/models"
+	"microblog/internal/storage"
 )
 
 type PostService struct {
 	store *storage.PostStorage
-	user  *storage.UserSstorage
+	user  *storage.UsersStorage
 }
 
-func NewPostService(store *storage.PostStorage, user *storage.UserSstorage) *PostService {
+func NewPostService(store *storage.PostStorage, user *storage.UsersStorage) *PostService {
 	return &PostService{
 		store: store,
 		user:  user,
@@ -26,6 +27,14 @@ func (s *PostService) GeneratePosttID() string {
 	return uuid.NewString()
 }
 
+// Эта функция создает пост
+//
+// - Проверяет, что текст не пустой
+// - Получает автора
+// - Генерирует ID
+// - Устанавливает время
+// - Создает пост
+// - Сохраняет в storage
 func (ps *PostService) CreatePost(authorID, text string) (m.Post, error) {
 
 	if text == "" {
@@ -51,7 +60,7 @@ func (ps *PostService) CreatePost(authorID, text string) (m.Post, error) {
 
 	err = ps.store.AddPost(post)
 	if err != nil {
-		return m.Post{}, errors.New("failed to create post")
+		return m.Post{}, storage.ErrFailedToCreatePost
 	}
 
 	return post, nil
@@ -65,30 +74,32 @@ func (ps *PostService) GetAllPosts() []m.Post {
 	return ps.store.GetAllPosts()
 }
 
+// Эта функция добавляет лайк к посту
+//
+// - Проверяет, что пользователь существует
+// - Получает пост
+// - Проверяет, не лайкал ли уже этот пользователь
+// - Добавляет лайк
+// - Обновляет пост в storage через безопасный метод
 func (ps *PostService) LikePost(postID, userID string) (*m.Post, error) {
-	// Проверяем, что пользователь существует
 	_, err := ps.user.GetUserByID(userID)
 	if err != nil {
-		return nil, errors.New("user not found")
+		return nil, storage.ErrUserNotFound
 	}
 
-	// Получаем пост
 	post, err := ps.store.GetPostById(postID)
 	if err != nil {
-		return nil, errors.New("post not found")
+		return nil, storage.ErrPostNotFound
 	}
 
-	// Проверяем, не лайкал ли уже этот пользователь
 	for _, likeUserID := range post.Likes {
 		if likeUserID == userID {
 			return nil, errors.New("already liked")
 		}
 	}
 
-	// Добавляем лайк
 	post.Likes = append(post.Likes, userID)
 
-	// Обновляем пост в storage через безопасный метод
 	err = ps.store.UpdatePost(*post)
 	if err != nil {
 		return nil, err
