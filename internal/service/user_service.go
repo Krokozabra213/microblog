@@ -32,35 +32,28 @@ func (s *UserService) GenerateUserID() string {
 // - Создает юзера
 // - И сохраняет все в память
 func (s *UserService) RegisterUser(username string) (*m.User, error) {
-	// 1. Валидация username
 	if username == "" {
 		return nil, errors.New("username is empty")
 	}
 
-	// 2. Проверка уникальности (опционально)
 	if s.store.ExistsByUsername(strings.ToLower(username)) {
 		return &m.User{}, errors.New("username already exists")
 	}
 
-	// 3. Генерация ID
 	id := s.GenerateUserID()
 
-	// 4. Установка времени
 	createdAt := time.Now()
 
-	// 5. Создание User
 	user := m.User{
 		ID:        id,
 		Username:  username,
 		CreatedAt: createdAt,
 	}
 
-	// 6. Вызов store.Create(user)
 	err := s.store.Create(user)
 	if err != nil {
 		return nil, err
 	}
 
-	// 7. Возврат результата
 	return &user, nil
 }
