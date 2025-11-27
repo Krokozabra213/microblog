@@ -1,93 +1,251 @@
-# microblog
+# 🚀 Спринт 1: Git + Основы Go | REST
 
 
 
-## Getting started
+Один сервис, одна программа.
+Без базы данных — всё храним **в памяти**, как настоящие пионеры!
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### 🔧 Функциональность:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+| Метод  | Путь               | Что делает                              |
+| ------ | ------------------ | --------------------------------------- |
+| `POST` | `/register`        | Регистрирует пользователя по `username` |
+| `POST` | `/posts`           | Создаёт новый пост                      |
+| `GET`  | `/posts`           | Отдаёт фид — список всех постов         |
+| `POST` | `/posts/{id}/like` | Лайкает пост по его `id`                |
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 🧠 Особенности проекта
+
+- **Всё хранится в Go-структурах**: карты и срезы (`map`, `[]`)
+- **Нет авторизации** — только имитация, всё по-честному
+- **Структуры**:
+  - `User` — имя и ID
+  - `Post` — автор, текст, ID и список лайков
+- Вся логика живёт в `map[string]*User` и `[]*Post`
+
+---
+
+## 📂 Архитектура проекта
+
+Проект разбит по слоям, как в настоящих продакшн-проектах:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/aziz89112718033/microblog.git
-git branch -M main
-git push -uf origin main
+microblog/
+├── cmd/
+│   └── main.go        # Точка входа в приложение
+├── internal/
+│   ├── handlers/      # HTTP-обработчики (REST-эндпоинты)
+│   ├── service/       # Бизнес-логика (создание постов, регистрация и т.д.)
+│   └── models/        # Структуры данных: User, Post и т.д.
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://gitlab.com/aziz89112718033/microblog/-/settings/integrations)
+## 🧪 Что ты отработаешь в этом спринте
 
-## Collaborate with your team
+✅ Работа с `net/http` или `gorilla/mux`
+✅ Парсинг и валидация JSON-запросов
+✅ Работа с Go-структурами: `map`, `[]slice`, `struct`, указатели
+✅ Основы unit-тестирования (тестируем `service`, а не `handlers`)
+✅ Понимание архитектуры: слои `handlers`, `service`, `models`
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+---
 
-## Test and Deploy
+## 📘 Git в этом проекте
 
-Use the built-in continuous integration in GitLab.
+Хватит просто коммитить. Давай осваивать **Git по-взрослому**:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+- Ветки по GitFlow:
+  - `feature/register`
+  - `feature/post`
+  - `bugfix/like`
+- Работа с:
+  - `merge`
+  - `squash`
+  - `rebase`
+  - Pull Request flow
 
-***
+---
 
-# Editing this README
+## 🔮 Подготовка к будущим спринтам
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Ты уже строишь архитектуру, готовую для роста 💪
 
-## Suggestions for a good README
+- Память можно легко заменить на **PostgreSQL**
+- REST можно заменить на **gRPC**
+- Этот сервис — будущий **микросервис**
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+## 📚 Ссылки и полезные материалы
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### 🔧 Git
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+- [Интерактивная тренировка GIT](https://learngitbranching.js.org/?locale=ru_RU)
+- [GitFlow простым языком](https://wiki.merionet.ru/articles/git-flow-cto-eto-i-kak-rabotaet)
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 🧠 Go
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- [Официальный тур по Go](https://go.dev/tour/welcome)
+- [Go by Example (примеры)](https://gobyexample.com/)
+- [Документация по net/http](https://pkg.go.dev/net/http)
+- [gorilla/mux (GitHub)](https://github.com/gorilla/mux)
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### 📦 REST и JSON
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+- [Что такое REST](https://practicum.yandex.ru/blog/chto-takoe-rest-api-i-kak-rabotaet/)
+- [JSON в Go](https://gobyexample.com/json)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### ✅ Тестирование
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- [Тестирование в Go (официально)](https://go.dev/doc/tutorial/add-a-test)
+- [Простой видос про тестирование в Go](https://www.youtube.com/watch?v=fMUNBJPhP6Y)
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+---
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## ✅ Статус проекта
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**Проект полностью реализован и протестирован!**
 
-## License
-For open source projects, say how it is licensed.
+### Что готово:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- ✅ Регистрация пользователей (`POST /users`)
+- ✅ Создание постов (`POST /posts`)
+- ✅ Получение всех постов (`GET /posts`)
+- ✅ Получение поста по ID (`GET /posts/{id}`)
+- ✅ Лайки постов (`POST /posts/{id}/like`)
+- ✅ Защита от race conditions (использование мьютексов)
+- ✅ Валидация входных данных
+- ✅ Обработка ошибок
+- ✅ Интеграционные тесты
+
+### Результаты тестирования:
+
+```
+=== RUN   TestFullWorkflow
+    main_test.go:376: ✅ Полный workflow успешно пройден!
+--- PASS: TestFullWorkflow (0.03s)
+PASS
+```
+
+**Все основные функции работают корректно!**
+
+---
+
+## 🚀 Как запустить проект
+
+### 1. Запуск сервера
+
+```bash
+# Вариант 1: Запустить напрямую
+go run cmd/main.go
+
+# Вариант 2: Сначала скомпилировать, потом запустить
+go build -o microblog.exe cmd/main.go
+./microblog.exe
+```
+
+Сервер запустится на `http://localhost:8080`
+
+### 2. Доступные эндпоинты
+
+```
+POST   /users              - Регистрация пользователя
+POST   /posts              - Создание поста
+GET    /posts              - Получение всех постов
+GET    /posts/{id}         - Получение поста по ID
+POST   /posts/{id}/like    - Лайк поста
+```
+
+### 3. Тестирование API
+
+#### Автоматическое тестирование (Linux/Mac/Git Bash)
+
+```bash
+# Дать права на выполнение (один раз)
+chmod +x test_api.sh
+
+# Запустить тесты
+./test_api.sh
+```
+
+#### Ручное тестирование через curl
+
+```bash
+# 1. Зарегистрировать пользователя
+curl -X POST http://localhost:8080/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice"}'
+
+# 2. Создать пост (подставь свой user_id из предыдущего ответа)
+curl -X POST http://localhost:8080/posts \
+  -H "Content-Type: application/json" \
+  -d '{"author_id":"USER_ID_HERE","text":"Hello World!"}'
+
+# 3. Получить все посты
+curl http://localhost:8080/posts
+
+# 4. Получить конкретный пост
+curl http://localhost:8080/posts/POST_ID_HERE
+
+# 5. Лайкнуть пост
+curl -X POST http://localhost:8080/posts/POST_ID_HERE/like \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"USER_ID_HERE"}'
+```
+
+### 4. Проверка на race conditions
+
+```bash
+# Запустить с детектором гонок
+go run -race cmd/main.go
+```
+
+### 5. Запуск автоматических тестов
+
+```bash
+# Запустить все тесты
+go test ./cmd/... -v
+
+# Запустить полный workflow тест
+go test ./cmd/... -run TestFullWorkflow -v
+
+# Запустить с детектором гонок (требует CGO)
+CGO_ENABLED=1 go test ./cmd/... -race -v
+```
+
+---
+
+## 🎯 Итоги
+
+**Проект готов к использованию!** Все эндпоинты работают, тесты проходят, архитектура соблюдена.
+
+### Что дальше?
+
+- Добавить больше валидаций
+- Реализовать удаление постов
+- Добавить пагинацию для списка постов
+- Написать unit-тесты для service-слоя
+- Подготовиться к замене in-memory storage на PostgreSQL
+
+---
+
+Если что-то не работает — это отлично, значит ты учишься.
+Если всё работает — пора делать рефакторинг 😄
+
+## Очень годный курс по REST API
+
+- [Ссылочка на Youtube. Курс REST API](https://www.youtube.com/playlist?list=PLbTTxxr-hMmyFAvyn7DeOgNRN8BQdjFm8)
+
+## Важное наставление
+
+> Тебе нужно понять проект, написать много кода (порой плохого), но сделать это самому. Все нейросети (ChatGPT, Claude, Deepseek и другие) - это твои помощники. Они не должны написать код за тебя, они должны тебе помочь. Направить твою мысль, проревьюить твой код или просто понять как работает технология. Твой фундамент закладывается здесь и предлагаю его заложить вместе. Не бойся скидывать код на ревью. Код можно улучшать бесконечно. Я предлагаю тебе писать код и получать фидбэк за свою работу. Так мы сможем быстрее двигаться вперед и улучшаться.
+
+### Дополнение
+
+Если есть желание добавить больше функциональности в проект, то это отлично. Любая
+инициатива приветствуется. Только перед добавлением этого в проект - попытайся ответить себе на вопрос: **_Зачем мы это делаем?_** Если ответ получен, то вперед.
+Если же нет, то может пока не стоит реализовывать идею?
+# microblog1
