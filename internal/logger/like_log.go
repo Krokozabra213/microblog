@@ -6,10 +6,6 @@ import (
 	"os"
 )
 
-// этот интерфейс выступает как нобор правил
-// Логгер на то что поставлен лайк
-// Логгер на снятие лайка
-// Логгер на ошибку в процессе
 type LikeLogger interface {
 	LogLike(postID string, userID string)
 	LogUnlike(postID string, userID string)
