@@ -10,6 +10,7 @@ type LikeLogger interface {
 	LogLike(postID string, userID string)
 	LogUnlike(postID string, userID string)
 	LogError(postID string, userID string, err error)
+	LogQueryError(err error)
 }
 
 type consoleLikeLogger struct {
@@ -32,4 +33,8 @@ func (l *consoleLikeLogger) LogUnlike(postID string, userID string) {
 
 func (l *consoleLikeLogger) LogError(postID string, userID string, err error) {
 	l.logger.Printf(fmt.Sprintf("[ERROR] User %s post %s error: %v", userID, postID, err))
+}
+
+func (l *consoleLikeLogger) LogQueryError(err error) {
+	l.logger.Printf(fmt.Sprintf("[ERROR_QUEUE] User %s post %s error: %v", err))
 }
