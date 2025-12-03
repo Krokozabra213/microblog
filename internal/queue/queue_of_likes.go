@@ -3,45 +3,59 @@ package queue
 import (
 	"microblog/internal/logger"
 	"microblog/internal/service"
+	"time"
 )
 
 type LikeQueue struct {
 	channel     chan LikeEvent
 	postService *service.PostService
-	logger      logger.LikeLogger
+	eventLogger *logger.EventLogger
 }
+
 type LikeEvent struct {
 	PostID string
 	UserID string
 }
 
 func (q *LikeQueue) Start() {
-
 	for {
-		LikeEvent := <-q.channel
+		e := <-q.channel
 
-		_, err := q.postService.LikePost(LikeEvent.PostID, LikeEvent.UserID)
+		_, err := q.postService.LikePost(e.PostID, e.UserID)
 
 		if err != nil {
-			q.logger.LogError(LikeEvent.PostID, LikeEvent.UserID, err)
+			event := logger.Event{
+				Type:      "LIKE_ERROR",
+				UserID:    e.UserID,
+				PostID:    e.PostID,
+				Message:   err.Error(),
+				Timestemp: time.Now(),
+			}
+			q.eventLogger.Log(event)
 		} else {
-			q.logger.LogLike(LikeEvent.PostID, LikeEvent.UserID)
+			event := logger.Event{
+				Type:      "LIKE",
+				UserID:    e.UserID,
+				PostID:    e.PostID,
+				Message:   "Post liked successfully",
+				Timestemp: time.Now(),
+			}
+			q.eventLogger.Log(event)
 		}
 	}
-
 }
-func NewLikeQueue(postService *service.PostService, logger logger.LikeLogger) *LikeQueue {
+
+func NewLikeQueue(postService *service.PostService, eventLogger *logger.EventLogger) *LikeQueue {
 	ch := make(chan LikeEvent, 100)
 
 	q := &LikeQueue{
 		channel:     ch,
 		postService: postService,
-		logger:      logger,
+		eventLogger: eventLogger,
 	}
+
 	go q.Start()
-
 	return q
-
 }
 
 func (q *LikeQueue) Enqueue(event LikeEvent) {

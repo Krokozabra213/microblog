@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"microblog/internal/logger"
 	m "microblog/internal/models"
 	"microblog/internal/storage"
 	"strings"
@@ -11,13 +12,16 @@ import (
 )
 
 type UserService struct {
-	store *storage.UsersStorage
+	store  *storage.UsersStorage
+	logger *logger.EventLogger
 }
 
-func NewUserService(store *storage.UsersStorage) *UserService {
+func NewUserService(store *storage.UsersStorage, log *logger.EventLogger) *UserService {
 	return &UserService{
-		store: store,
+		store:  store,
+		logger: log,
 	}
+
 }
 
 func (s *UserService) GenerateUserID() string {
@@ -41,7 +45,6 @@ func (s *UserService) RegisterUser(username string) (*m.User, error) {
 	}
 
 	id := s.GenerateUserID()
-
 	createdAt := time.Now()
 
 	user := m.User{
@@ -54,6 +57,15 @@ func (s *UserService) RegisterUser(username string) (*m.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	event := logger.Event{
+		Type:      "REGISTRATION",
+		UserID:    user.ID,
+		PostID:    "",
+		Message:   "User successfully registered",
+		Timestemp: time.Now(),
+	}
+	s.logger.Log(event)
 
 	return &user, nil
 }

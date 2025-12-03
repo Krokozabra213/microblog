@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"time"
 
 	"microblog/internal/handlers"
+	"microblog/internal/logger"
+	"microblog/internal/queue"
 	"microblog/internal/service"
 	"microblog/internal/storage"
 )
@@ -21,15 +24,20 @@ func main() {
 	userStorage := storage.NewUserStorage()
 	postStorage := storage.NewPostStorage()
 
-	// Инициализация service слоя
-	userService := service.NewUserService(userStorage)
-	postService := service.NewPostService(postStorage, userStorage)
+	// Инициализация logger
+	eventLogger := logger.NewEventLogger()
 
-	// Инициализация handlers
+	// Инициализация service слоя (с логгером)
+	userService := service.NewUserService(userStorage, eventLogger)
+	postService := service.NewPostService(postStorage, userStorage, eventLogger)
+
+	// Инициализация очереди лайков
+	likeQueue := queue.NewLikeQueue(postService, eventLogger)
+
+	// Инициализация handlers (с очередью)
 	userHandler := handlers.NewUserHandler(userService)
-	postHandler := handlers.NewPostHandler(postService)
+	postHandler := handlers.NewPostHandler(postService, likeQueue)
 
-	// Настройка роутинга
 	http.HandleFunc("/users", userHandler.RegisterUser)
 
 	http.HandleFunc("/posts", func(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +64,6 @@ func main() {
 		postHandler.GetPost(w, r)
 	})
 
-	// Создаём сервер
 	port := ":8080"
 	server := &http.Server{
 		Addr:    port,
@@ -66,7 +73,6 @@ func main() {
 	// Канал для ошибок сервера
 	serverErrors := make(chan error, 1)
 
-	// Запускаем сервер в горутине
 	go func() {
 		fmt.Printf("Server is running on http://localhost%s\n", port)
 		fmt.Println("Available endpoints:")
@@ -80,11 +86,9 @@ func main() {
 		serverErrors <- server.ListenAndServe()
 	}()
 
-	// Слушаем сигналы остановки
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	// Ждём либо ошибки, либо сигнала остановки
 	select {
 	case err := <-serverErrors:
 		log.Fatalf("Failed to start server: %v", err)
@@ -92,11 +96,9 @@ func main() {
 	case sig := <-shutdown:
 		log.Printf("Received signal: %v. Starting graceful shutdown...", sig)
 
-		// Даём 30 секунд на завершение текущих запросов
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Graceful shutdown
 		if err := server.Shutdown(ctx); err != nil {
 			log.Printf("Graceful shutdown failed: %v", err)
 			log.Println("Forcing shutdown...")
