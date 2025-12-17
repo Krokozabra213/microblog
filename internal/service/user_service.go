@@ -11,6 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
+const UserRegist = "REGISTRATION"
+const UserMessege = "User successfully registered"
+
 type UserService struct {
 	store  *storage.UsersStorage
 	logger *logger.EventLogger
@@ -59,10 +62,10 @@ func (s *UserService) RegisterUser(username string) (*m.User, error) {
 	}
 
 	event := logger.Event{
-		Type:      "REGISTRATION",
+		Type:      UserRegist,
 		UserID:    user.ID,
 		PostID:    "",
-		Message:   "User successfully registered",
+		Message:   UserMessege,
 		Timestemp: time.Now(),
 	}
 	s.logger.Log(event)

@@ -18,9 +18,7 @@ type LikeEvent struct {
 }
 
 func (q *LikeQueue) Start() {
-	for {
-		e := <-q.channel
-
+	for e := range q.channel {
 		_, err := q.postService.LikePost(e.PostID, e.UserID)
 
 		if err != nil {

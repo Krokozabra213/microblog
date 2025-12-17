@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -16,6 +18,8 @@ type Event struct {
 type EventLogger struct {
 	channel chan Event
 }
+
+var mu sync.Mutex
 
 func NewEventLogger() *EventLogger {
 	i := &EventLogger{
@@ -32,7 +36,15 @@ func NewEventLogger() *EventLogger {
 }
 
 func (l *EventLogger) Log(event Event) {
-	l.channel <- event
+	mu.Lock()
+	select {
+	case l.channel <- event:
+		fmt.Println("Event logged")
+	default:
+		log.Printf("Предупреждение: не удалось залогировать событие, канал переполнен: %+v", event)
+
+	}
+	mu.Unlock()
 }
 
 func (l *EventLogger) Close() {

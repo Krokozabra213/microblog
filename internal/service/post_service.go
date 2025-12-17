@@ -12,6 +12,9 @@ import (
 	"microblog/internal/storage"
 )
 
+const PostCreated = "POST_CREATED"
+const PostMessage = "Post successfully created"
+
 type PostService struct {
 	store  *storage.PostStorage
 	user   *storage.UsersStorage
@@ -67,10 +70,10 @@ func (ps *PostService) CreatePost(authorID, text string) (m.Post, error) {
 	}
 
 	event := logger.Event{
-		Type:      "POST_CREATED",
+		Type:      PostCreated,
 		UserID:    authorID,
 		PostID:    post.ID,
-		Message:   "Post successfully created",
+		Message:   PostMessage,
 		Timestemp: time.Now(),
 	}
 
