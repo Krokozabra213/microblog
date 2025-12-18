@@ -74,7 +74,7 @@ func (ps *PostService) CreatePost(authorID, text string) (m.Post, error) {
 		UserID:    authorID,
 		PostID:    post.ID,
 		Message:   PostMessage,
-		Timestemp: time.Now(),
+		Timestemp: time.Now().UTC(),
 	}
 
 	ps.logger.Log(event)

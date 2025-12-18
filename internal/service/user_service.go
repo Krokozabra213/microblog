@@ -12,7 +12,7 @@ import (
 )
 
 const UserRegist = "REGISTRATION"
-const UserMessege = "User successfully registered"
+const UserMessage = "User successfully registered"
 
 type UserService struct {
 	store  *storage.UsersStorage
@@ -65,7 +65,7 @@ func (s *UserService) RegisterUser(username string) (*m.User, error) {
 		Type:      UserRegist,
 		UserID:    user.ID,
 		PostID:    "",
-		Message:   UserMessege,
+		Message:   UserMessage,
 		Timestemp: time.Now(),
 	}
 	s.logger.Log(event)

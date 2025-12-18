@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -36,18 +35,16 @@ func NewEventLogger() *EventLogger {
 }
 
 func (l *EventLogger) Log(event Event) {
-	mu.Lock()
+
 	select {
 	case l.channel <- event:
-		fmt.Println("Event logged")
+		log.Println("The event was successfully logged.", event)
 	default:
-		log.Printf("Предупреждение: не удалось залогировать событие, канал переполнен: %+v", event)
+		log.Printf("Warning: Failed to log event, channel full: %+v", event)
 
 	}
-	mu.Unlock()
 }
 
 func (l *EventLogger) Close() {
-
 	close(l.channel)
 }
