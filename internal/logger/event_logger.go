@@ -38,10 +38,10 @@ func (l *EventLogger) Log(event Event) {
 
 	select {
 	case l.channel <- event:
-		log.Println("The event was successfully logged.", event)
+		log.Printf("Event logged: %s (type: %T)", event)
 	default:
-		log.Printf("Warning: Failed to log event, channel full: %+v", event)
-
+		log.Printf("WARNING: Event channel full, event dropped. Channel size: %d/%d",
+			len(l.channel), cap(l.channel))
 	}
 }
 
