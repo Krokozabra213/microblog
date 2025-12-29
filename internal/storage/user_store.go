@@ -36,7 +36,7 @@ func (s *UsersStorage) Create(user m.User) error {
 	}
 
 	s.User[user.ID] = user
-
+	s.UserByName[strings.ToLower(user.Username)] = user.ID
 	return nil
 }
 
@@ -77,5 +77,4 @@ func (s *UsersStorage) ExistsByUsername(username string) bool {
 	_, exists := s.UserByName[strings.ToLower(username)]
 	return exists
 
-	return false
 }

@@ -41,7 +41,7 @@ func (ps *PostStorage) GetPostById(id string) (*m.Post, error) {
 
 	post, ok := ps.Posts[id]
 	if !ok {
-		return nil, fmt.Errorf("%w: id=%q", ErrPostNotFound.Error(), id)
+		return nil, fmt.Errorf("%w: id=%q", ErrPostNotFound, id)
 	}
 
 	return &post, nil
@@ -69,7 +69,7 @@ func (ps *PostStorage) UpdatePost(post m.Post) error {
 	defer ps.mu.Unlock()
 
 	if _, exists := ps.Posts[post.ID]; !exists {
-		return fmt.Errorf("%w: id=%q", ErrPostNotFound.Error(), post.ID)
+		return fmt.Errorf("%w: id=%q", ErrPostNotFound, post.ID)
 	}
 
 	ps.Posts[post.ID] = post

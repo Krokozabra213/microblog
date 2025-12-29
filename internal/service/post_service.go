@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"microblog/internal/logger"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,15 +12,20 @@ import (
 	"microblog/internal/storage"
 )
 
+const PostCreated = "POST_CREATED"
+const PostMessage = "Post successfully created"
+
 type PostService struct {
-	store *storage.PostStorage
-	user  *storage.UsersStorage
+	store  *storage.PostStorage
+	user   *storage.UsersStorage
+	logger *logger.EventLogger
 }
 
-func NewPostService(store *storage.PostStorage, user *storage.UsersStorage) *PostService {
+func NewPostService(store *storage.PostStorage, user *storage.UsersStorage, log *logger.EventLogger) *PostService {
 	return &PostService{
-		store: store,
-		user:  user,
+		store:  store,
+		user:   user,
+		logger: log,
 	}
 }
 
@@ -28,7 +34,7 @@ func (s *PostService) GeneratePosttID() string {
 }
 
 // Эта функция создает пост
-//
+// 1
 // - Проверяет, что текст не пустой
 // - Получает автора
 // - Генерирует ID
@@ -62,6 +68,16 @@ func (ps *PostService) CreatePost(authorID, text string) (m.Post, error) {
 	if err != nil {
 		return m.Post{}, storage.ErrFailedToCreatePost
 	}
+
+	event := logger.Event{
+		Type:      PostCreated,
+		UserID:    authorID,
+		PostID:    post.ID,
+		Message:   PostMessage,
+		Timestemp: time.Now().UTC(),
+	}
+
+	ps.logger.Log(event)
 
 	return post, nil
 }

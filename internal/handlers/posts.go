@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"microblog/internal/queue"
 	"net/http"
 	"strings"
 
@@ -21,11 +22,13 @@ type LikePostRequest struct {
 
 type PostHandler struct {
 	postService *service.PostService
+	likeQueue   *queue.LikeQueue
 }
 
-func NewPostHandler(postService *service.PostService) *PostHandler {
+func NewPostHandler(postService *service.PostService, likeQueue *queue.LikeQueue) *PostHandler {
 	return &PostHandler{
 		postService: postService,
+		likeQueue:   likeQueue,
 	}
 }
 
@@ -121,11 +124,15 @@ func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.postService.LikePost(path, req.UserID)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
-		return
+	event := queue.LikeEvent{
+		PostID: path,
+		UserID: req.UserID,
 	}
 
-	respondJSON(w, http.StatusOK, post)
+	h.likeQueue.Enqueue(event)
+
+	respondJSON(w, http.StatusAccepted, map[string]string{
+		"message": "Like is being processed",
+	})
+
 }
