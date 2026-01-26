@@ -1,15 +1,20 @@
 package queue
 
 import (
+	"errors"
 	"microblog/internal/logger"
-	"microblog/internal/service"
+	"sync"
 	"time"
 )
 
-type LikeQueue struct {
-	channel     chan LikeEvent
-	postService *service.PostService
-	eventLogger *logger.EventLogger
+var ErrShutdownTimeout = errors.New("shutdown timeout")
+
+type PostService interface {
+	LikePost(postID, userID string) error
+}
+
+type Logger interface {
+	Log(event logger.EventMessage)
 }
 
 type LikeEvent struct {
@@ -17,49 +22,96 @@ type LikeEvent struct {
 	UserID string
 }
 
-func (q *LikeQueue) Start() {
-	for e := range q.channel {
-		_, err := q.postService.LikePost(e.PostID, e.UserID)
+type LikeQueue struct {
+	channel     chan LikeEvent
+	postService PostService
+	eventLogger Logger
 
-		if err != nil {
-			event := logger.Event{
-				Type:      "LIKE_ERROR",
-				UserID:    e.UserID,
-				PostID:    e.PostID,
-				Message:   err.Error(),
-				Timestemp: time.Now(),
-			}
-			q.eventLogger.Log(event)
-		} else {
-			event := logger.Event{
-				Type:      "LIKE",
-				UserID:    e.UserID,
-				PostID:    e.PostID,
-				Message:   "Post liked successfully",
-				Timestemp: time.Now(),
-			}
-			q.eventLogger.Log(event)
-		}
-	}
+	closed    chan struct{}
+	closeOnce sync.Once
+	wg        sync.WaitGroup
 }
 
-func NewLikeQueue(postService *service.PostService, eventLogger *logger.EventLogger) *LikeQueue {
-	ch := make(chan LikeEvent, 100)
+func NewLikeQueue(eventLogger Logger, postService PostService, eventBuffer int) *LikeQueue {
+	ch := make(chan LikeEvent, eventBuffer)
 
 	q := &LikeQueue{
 		channel:     ch,
 		postService: postService,
 		eventLogger: eventLogger,
+		closed:      make(chan struct{}),
 	}
 
-	go q.Start()
+	q.wg.Add(1)
+	go q.worker()
 	return q
 }
 
-func (q *LikeQueue) Enqueue(event LikeEvent) {
-	q.channel <- event
+func (q *LikeQueue) worker() {
+	defer q.wg.Done()
+	for event := range q.channel {
+		q.processEvent(event)
+	}
 }
 
-func (q *LikeQueue) Close() {
-	close(q.channel)
+func (q *LikeQueue) processEvent(e LikeEvent) {
+	err := q.postService.LikePost(e.PostID, e.UserID)
+
+	eventType := logger.PostLiked
+	message := logger.PostLikedMessage
+
+	if err != nil {
+		eventType = logger.PostLikedErr
+		message = err.Error()
+	}
+
+	q.eventLogger.Log(logger.EventPost{
+		Type:      eventType,
+		AuthorID:  e.UserID,
+		PostID:    e.PostID,
+		Message:   message,
+		Timestamp: time.Now(),
+	})
+}
+
+func (q *LikeQueue) Enqueue(event LikeEvent) bool {
+	// Быстрая проверка
+	select {
+	case <-q.closed:
+		return false
+	default:
+	}
+
+	// Защита от panic
+	defer func() {
+		recover()
+	}()
+
+	select {
+	case q.channel <- event:
+		return true
+	case <-q.closed:
+		return false
+	}
+}
+
+func (q *LikeQueue) GracefullShutdown(timeout time.Duration) error {
+	q.closeOnce.Do(func() {
+		close(q.closed)
+		close(q.channel)
+	})
+
+	// Ждём завершения с таймаутом
+	done := make(chan struct{})
+	go func() {
+		q.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-time.After(timeout):
+		return ErrShutdownTimeout
+	}
 }

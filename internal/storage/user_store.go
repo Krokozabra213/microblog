@@ -6,10 +6,13 @@ import (
 	m "microblog/internal/models"
 	"strings"
 	"sync"
+	"time"
 )
 
-var ErrAlreadyExists = errors.New("already exists")
-var ErrUserNotFound = errors.New("user not found")
+var (
+	ErrAlreadyExists = errors.New("already exists")
+	ErrUserNotFound  = errors.New("user not found")
+)
 
 // Структура для хранения пользователей в памяти
 type UsersStorage struct {
@@ -35,6 +38,8 @@ func (s *UsersStorage) Create(user m.User) error {
 		return errors.New(ErrAlreadyExists.Error())
 	}
 
+	user.CreatedAt = time.Now()
+
 	s.User[user.ID] = user
 	s.UserByName[strings.ToLower(user.Username)] = user.ID
 	return nil
@@ -48,7 +53,7 @@ func (s *UsersStorage) GetAll() []m.User {
 		return []m.User{}
 	}
 
-	all := make([]m.User, 0)
+	all := make([]m.User, 0, len(s.User))
 	for _, user := range s.User {
 		all = append(all, user)
 	}

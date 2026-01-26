@@ -2,18 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"microblog/internal/handlers/request"
+	"microblog/internal/models"
 	"microblog/internal/queue"
+	postservice "microblog/internal/service/post-service"
 	"net/http"
 	"strings"
-
-	"microblog/internal/service"
 )
-
-// структура для создания поста
-type CreatePostRequest struct {
-	AuthorID string `json:"author_id"`
-	Text     string `json:"text"`
-}
 
 // структура для лайка поста
 type LikePostRequest struct {
@@ -21,11 +16,11 @@ type LikePostRequest struct {
 }
 
 type PostHandler struct {
-	postService *service.PostService
+	postService *postservice.PostService
 	likeQueue   *queue.LikeQueue
 }
 
-func NewPostHandler(postService *service.PostService, likeQueue *queue.LikeQueue) *PostHandler {
+func NewPostHandler(postService *postservice.PostService, likeQueue *queue.LikeQueue) *PostHandler {
 	return &PostHandler{
 		postService: postService,
 		likeQueue:   likeQueue,
@@ -35,27 +30,18 @@ func NewPostHandler(postService *service.PostService, likeQueue *queue.LikeQueue
 // CreatePost - создание нового поста
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		respondError(w, http.StatusMethodNotAllowed, "method not allowed")
+		respondError(w, http.StatusMethodNotAllowed, ErrMethodNotAllowed)
 		return
 	}
 
-	var req CreatePostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "invalid JSON")
+	req, err := DecodeAndValidate[request.CreatePost](r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if req.AuthorID == "" {
-		respondError(w, http.StatusBadRequest, "author_id is required")
-		return
-	}
-
-	if req.Text == "" {
-		respondError(w, http.StatusBadRequest, "text is required")
-		return
-	}
-
-	post, err := h.postService.CreatePost(req.AuthorID, req.Text)
+	var post *models.Post
+	post, err = h.postService.CreatePost(req.AuthorID, req.Text)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
@@ -67,14 +53,14 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 // GetPost - получение поста по ID
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		respondError(w, http.StatusMethodNotAllowed, "method not allowed")
+		respondError(w, http.StatusMethodNotAllowed, ErrMethodNotAllowed)
 		return
 	}
 
 	// Извлекаем ID из URL (простой способ без роутера)
 	path := strings.TrimPrefix(r.URL.Path, "/posts/")
 	if path == "" || path == r.URL.Path {
-		respondError(w, http.StatusBadRequest, "post id is required")
+		respondError(w, http.StatusBadRequest, ErrPostIDRequired)
 		return
 	}
 
@@ -90,7 +76,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 // GetAllPosts - получение всех постов
 func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		respondError(w, http.StatusMethodNotAllowed, "method not allowed")
+		respondError(w, http.StatusMethodNotAllowed, ErrMethodNotAllowed)
 		return
 	}
 
@@ -101,7 +87,7 @@ func (h *PostHandler) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 // LikePost - лайк поста
 func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		respondError(w, http.StatusMethodNotAllowed, "method not allowed")
+		respondError(w, http.StatusMethodNotAllowed, ErrMethodNotAllowed)
 		return
 	}
 
@@ -109,7 +95,7 @@ func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 	path = strings.TrimSuffix(path, "/like")
 
 	if path == "" {
-		respondError(w, http.StatusBadRequest, "post id is required")
+		respondError(w, http.StatusBadRequest, ErrPostIDRequired)
 		return
 	}
 

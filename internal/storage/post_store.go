@@ -5,10 +5,13 @@ import (
 	"fmt"
 	m "microblog/internal/models"
 	"sync"
+	"time"
 )
 
-var ErrPostNotFound = errors.New("post not found")
-var ErrFailedToCreatePost = errors.New("failed to create post")
+var (
+	ErrPostNotFound = errors.New("post not found")
+	ErrPostLiked    = errors.New("already liked")
+)
 
 // Структура для хранения постов в памяти
 type PostStorage struct {
@@ -23,16 +26,18 @@ func NewPostStorage() *PostStorage {
 	}
 }
 
-func (ps *PostStorage) AddPost(post m.Post) error {
+func (ps *PostStorage) AddPost(post m.Post) (m.Post, error) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
 	if _, exists := ps.Posts[post.ID]; exists {
-		return errors.New(ErrAlreadyExists.Error())
+		return m.Post{}, errors.New(ErrAlreadyExists.Error())
 	}
 
+	post.CreatedAt = time.Now()
+
 	ps.Posts[post.ID] = post
-	return nil
+	return post, nil
 }
 
 func (ps *PostStorage) GetPostById(id string) (*m.Post, error) {
@@ -64,14 +69,18 @@ func (ps *PostStorage) GetAllPosts() []m.Post {
 	return posts
 }
 
-func (ps *PostStorage) UpdatePost(post m.Post) error {
+func (ps *PostStorage) LikePost(postID, userID string) error {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
-	if _, exists := ps.Posts[post.ID]; !exists {
-		return fmt.Errorf("%w: id=%q", ErrPostNotFound, post.ID)
+	if _, exists := ps.Posts[postID]; !exists {
+		return fmt.Errorf("%w: id=%q", ErrPostNotFound, postID)
 	}
 
-	ps.Posts[post.ID] = post
+	if _, exists := ps.Posts[postID].Likes[userID]; exists {
+		return ErrPostLiked
+	}
+
+	ps.Posts[postID].Likes[userID] = struct{}{}
 	return nil
 }

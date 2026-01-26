@@ -15,8 +15,17 @@ import (
 	"microblog/internal/handlers"
 	"microblog/internal/logger"
 	"microblog/internal/queue"
-	"microblog/internal/service"
+	postservice "microblog/internal/service/post-service"
+	userservice "microblog/internal/service/user-service"
 	"microblog/internal/storage"
+)
+
+// без конфига
+const (
+	gracefullTimeout  = 5 * time.Second
+	eventBufferLogger = 100
+	likeQueueBuffer   = 100
+	serverAddr        = ":8080"
 )
 
 func main() {
@@ -25,14 +34,16 @@ func main() {
 	postStorage := storage.NewPostStorage()
 
 	// Инициализация logger
-	eventLogger := logger.NewEventLogger()
+	eventLogger := logger.NewEventLogger(eventBufferLogger)
+	defer eventLogger.GracefullShutdown(gracefullTimeout)
 
 	// Инициализация service слоя (с логгером)
-	userService := service.NewUserService(userStorage, eventLogger)
-	postService := service.NewPostService(postStorage, userStorage, eventLogger)
+	userService := userservice.NewUserService(eventLogger, userStorage)
+	postService := postservice.NewPostService(eventLogger, userStorage, postStorage)
 
 	// Инициализация очереди лайков
-	likeQueue := queue.NewLikeQueue(postService, eventLogger)
+	likeQueue := queue.NewLikeQueue(eventLogger, postService, likeQueueBuffer)
+	defer likeQueue.GracefullShutdown(gracefullTimeout)
 
 	// Инициализация handlers (с очередью)
 	userHandler := handlers.NewUserHandler(userService)
@@ -64,9 +75,8 @@ func main() {
 		postHandler.GetPost(w, r)
 	})
 
-	port := ":8080"
 	server := &http.Server{
-		Addr:    port,
+		Addr:    serverAddr,
 		Handler: nil,
 	}
 
@@ -74,7 +84,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		fmt.Printf("Server is running on http://localhost%s\n", port)
+		fmt.Printf("Server is running on http://localhost%s\n", serverAddr)
 		fmt.Println("Available endpoints:")
 		fmt.Println("  POST   /users              - Register user")
 		fmt.Println("  POST   /posts              - Create post")
